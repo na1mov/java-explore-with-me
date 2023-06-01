@@ -20,6 +20,7 @@ public class StatsServiceImpl implements StatsService {
     private final StatsRepository statsRepository;
     private final ViewStatsMapper viewStatsMapper;
     private final EndpointHitMapper endpointHitMapper;
+
     @Override
     public EndpointHitDto save(EndpointHitDto endpointHitDto) {
         return endpointHitMapper.endpointHitToEndpointDto(
