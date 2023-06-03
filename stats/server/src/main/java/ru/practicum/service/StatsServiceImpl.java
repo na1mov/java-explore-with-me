@@ -23,12 +23,14 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public EndpointHitDto save(EndpointHitDto endpointHitDto) {
+        log.info(String.format("Сохранение статистики пользователя c IP:%s", endpointHitDto.getIp()));
         return endpointHitMapper.endpointHitToEndpointDto(
                 statsRepository.save(endpointHitMapper.endpointHitDtoToEndpoint(endpointHitDto)));
     }
 
     @Override
     public List<ViewStatsDto> find(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
+        log.info("Запрос на получение статистики");
         if (unique) {
             return statsRepository.findUniqueViewStats(start, end, uris).stream()
                     .map(viewStatsMapper::viewStatsToViewStatsDto)
