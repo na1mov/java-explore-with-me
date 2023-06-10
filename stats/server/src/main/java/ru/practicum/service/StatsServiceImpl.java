@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.EndpointHitDto;
 import ru.practicum.ViewStatsDto;
+import ru.practicum.exception.MyDataException;
 import ru.practicum.mapper.EndpointHitMapper;
 import ru.practicum.mapper.ViewStatsMapper;
 import ru.practicum.repository.StatsRepository;
@@ -31,11 +32,25 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public List<ViewStatsDto> find(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
         log.info("Запрос на получение статистики");
+
+        if (start != null && end != null && start.isAfter(end)) {
+            throw new MyDataException(String.format("Ошибка времени start:%s end:%s", start, end));
+        }
         if (unique) {
+            if (uris == null || uris.isEmpty() || uris.get(0).equals("/events")) {
+                return statsRepository.findUniqueViewStats(start, end).stream()
+                        .map(viewStatsMapper::viewStatsToViewStatsDto)
+                        .collect(Collectors.toList());
+            }
             return statsRepository.findUniqueViewStats(start, end, uris).stream()
                     .map(viewStatsMapper::viewStatsToViewStatsDto)
                     .collect(Collectors.toList());
         } else {
+            if (uris == null || uris.isEmpty() || uris.get(0).equals("/events")) {
+                return statsRepository.findViewStats(start, end).stream()
+                        .map(viewStatsMapper::viewStatsToViewStatsDto)
+                        .collect(Collectors.toList());
+            }
             return statsRepository.findViewStats(start, end, uris).stream()
                     .map(viewStatsMapper::viewStatsToViewStatsDto)
                     .collect(Collectors.toList());

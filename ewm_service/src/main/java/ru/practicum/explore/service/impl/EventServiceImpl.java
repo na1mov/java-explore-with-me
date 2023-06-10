@@ -255,6 +255,8 @@ public class EventServiceImpl implements EventService {
             }
         }
 
+        saveEndpointHit(request);
+
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QEvent qEvent = QEvent.event;
         booleanBuilder.and(qEvent.state.eq(EventState.PUBLISHED));
