@@ -14,6 +14,7 @@ import ru.practicum.explore.mapper.EventMapper;
 import ru.practicum.explore.mapper.LocationMapper;
 import ru.practicum.explore.model.*;
 import ru.practicum.explore.model.enums.EventState;
+import ru.practicum.explore.model.enums.RequestStatus;
 import ru.practicum.explore.model.enums.StateAction;
 import ru.practicum.explore.repository.CategoryRepository;
 import ru.practicum.explore.repository.EventRepository;
@@ -23,7 +24,6 @@ import ru.practicum.explore.service.EventService;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final StatsClient statsClient = new StatsClient("http://stats-server:9090");
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;
@@ -321,7 +320,8 @@ public class EventServiceImpl implements EventService {
     }
 
     private void setConfirmedRequests(Event event) {
-        List<Request> requestList = requestRepository.findAllByEventId(event.getId());
+        List<Request> requestList = requestRepository.findAllByEventIdAndStatus(event.getId(), RequestStatus.CONFIRMED);
+
         event.setConfirmedRequests((long) requestList.size());
     }
 }
