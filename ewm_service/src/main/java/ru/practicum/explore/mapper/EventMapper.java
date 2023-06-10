@@ -1,12 +1,10 @@
 package ru.practicum.explore.mapper;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import ru.practicum.explore.dto.EventDto;
 import ru.practicum.explore.dto.EventFullDto;
 import ru.practicum.explore.dto.EventShortDto;
-import ru.practicum.explore.dto.NewEventDto;
 import ru.practicum.explore.model.Event;
 
 @Mapper(componentModel = "spring",
