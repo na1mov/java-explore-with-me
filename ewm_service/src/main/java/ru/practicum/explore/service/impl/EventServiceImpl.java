@@ -42,7 +42,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventDto save(Long userId, NewEventDto newEventDto) {
-        if (newEventDto.getEventDate().isBefore(LocalDateTime.now())) {
+        if (newEventDto.getEventDate().minusHours(2).isBefore(LocalDateTime.now())) {
             throw new MyValidationException(String.format("Ошибка времени: %s", newEventDto.getEventDate()));
         }
 
@@ -71,7 +71,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto updateForUser(Long userId, Long eventId, UpdateEventUserRequest updateEventUserRequest) {
         if (updateEventUserRequest.getEventDate() != null
-                && updateEventUserRequest.getEventDate().isBefore(LocalDateTime.now())) {
+                && updateEventUserRequest.getEventDate().minusHours(2).isBefore(LocalDateTime.now())) {
             throw new MyValidationException(
                     String.format("Ошибка времени: %s", updateEventUserRequest.getEventDate()));
         }
@@ -138,17 +138,23 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> findAllForUser(Long userId, Pageable pageable) {
         findUserById(userId);
         List<Event> eventList = eventRepository.findAllByInitiatorId(userId, pageable);
+        LocalDateTime start = eventList.get(0).getCreatedOn();
+        for (Event event : eventList) {
+            if (event.getCreatedOn().isBefore(start)) {
+                start = event.getCreatedOn();
+            }
+        }
         List<EventShortDto> eventShortDtoList = eventList.stream()
                 .map(eventMapper::eventToEventShortDto)
                 .collect(Collectors.toList());
-        statsService.setViewForEventShortDto(eventShortDtoList);
+        statsService.setViewForEventShortDto(eventShortDtoList, start);
         return eventShortDtoList;
     }
 
     @Override
     public EventFullDto updateForAdmin(Long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
         if (updateEventAdminRequest.getEventDate() != null
-                && updateEventAdminRequest.getEventDate().isBefore(LocalDateTime.now())) {
+                && updateEventAdminRequest.getEventDate().minusHours(2).isBefore(LocalDateTime.now())) {
             throw new MyValidationException(
                     String.format("Ошибка времени: %s", updateEventAdminRequest.getEventDate()));
         }
@@ -172,7 +178,9 @@ public class EventServiceImpl implements EventService {
             eventForUpdate.setDescription(updateEventAdminRequest.getDescription());
         }
         if (updateEventAdminRequest.getLocation() != null) {
-            eventForUpdate.setLocation(updateEventAdminRequest.getLocation());
+            Location location = eventForUpdate.getLocation();
+            location.setLat(updateEventAdminRequest.getLocation().getLat());
+            location.setLon(updateEventAdminRequest.getLocation().getLon());
         }
         if (updateEventAdminRequest.getPaid() != null) {
             eventForUpdate.setPaid(updateEventAdminRequest.getPaid());

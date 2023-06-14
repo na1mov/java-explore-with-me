@@ -22,14 +22,12 @@ import java.util.Map;
 public class StatsServiceImpl implements StatsService {
     private final String serviceName;
     private final StatsClient statsClient;
-    private final LocalDateTime start;
 
     @Autowired
     public StatsServiceImpl(@Value("${stats-server.url}") String url,
                             @Value("${ewm.service.name}") String serviceName) {
         this.serviceName = serviceName;
         this.statsClient = new StatsClient(url);
-        this.start = LocalDateTime.now();
     }
 
     @Override
@@ -45,9 +43,13 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public void setViewForEventDto(List<EventDto> eventDtoList) {
+        LocalDateTime start = eventDtoList.get(0).getCreatedOn();
         List<String> uris = new ArrayList<>();
         Map<String, EventDto> uriToEventDto = new HashMap<>();
         for (EventDto eventDto : eventDtoList) {
+            if (eventDto.getCreatedOn().isBefore(start)) {
+                start = eventDto.getCreatedOn();
+            }
             String uri = "/events/" + eventDto.getId();
             uris.add(uri);
             uriToEventDto.put(uri, eventDto);
@@ -59,9 +61,13 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public void setViewForEventFullDto(List<EventFullDto> eventFullDtoList) {
+        LocalDateTime start = eventFullDtoList.get(0).getCreatedOn();
         List<String> uris = new ArrayList<>();
         Map<String, EventFullDto> uriToEventFullDto = new HashMap<>();
         for (EventFullDto eventFullDto : eventFullDtoList) {
+            if (eventFullDto.getCreatedOn().isBefore(start)) {
+                start = eventFullDto.getCreatedOn();
+            }
             String uri = "/events/" + eventFullDto.getId();
             uris.add(uri);
             uriToEventFullDto.put(uri, eventFullDto);
@@ -72,7 +78,7 @@ public class StatsServiceImpl implements StatsService {
     }
 
     @Override
-    public void setViewForEventShortDto(List<EventShortDto> eventShortDtoList) {
+    public void setViewForEventShortDto(List<EventShortDto> eventShortDtoList, LocalDateTime start) {
         List<String> uris = new ArrayList<>();
         Map<String, EventShortDto> uriToEventShortDto = new HashMap<>();
         for (EventShortDto eventShortDto : eventShortDtoList) {

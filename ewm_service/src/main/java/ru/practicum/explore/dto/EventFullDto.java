@@ -2,7 +2,6 @@ package ru.practicum.explore.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
-import ru.practicum.explore.model.Category;
 import ru.practicum.explore.model.enums.EventState;
 
 import java.time.LocalDateTime;
@@ -14,7 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class EventFullDto {
     private String annotation;
-    private Category category;
+    private CategoryDto category;
     private Long confirmedRequests;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdOn;

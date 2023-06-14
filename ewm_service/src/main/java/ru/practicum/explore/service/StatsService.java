@@ -5,6 +5,7 @@ import ru.practicum.explore.dto.EventFullDto;
 import ru.practicum.explore.dto.EventShortDto;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface StatsService {
@@ -14,5 +15,5 @@ public interface StatsService {
 
     void setViewForEventFullDto(List<EventFullDto> eventFullDtoList);
 
-    void setViewForEventShortDto(List<EventShortDto> eventShortDtoList);
+    void setViewForEventShortDto(List<EventShortDto> eventShortDtoList, LocalDateTime start);
 }
