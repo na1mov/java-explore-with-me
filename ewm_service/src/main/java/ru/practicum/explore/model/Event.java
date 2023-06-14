@@ -22,8 +22,6 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
-    @Column(name = "confirmed_requests")
-    private Long confirmedRequests;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_on")
     private LocalDateTime createdOn;
@@ -48,5 +46,4 @@ public class Event {
     @Enumerated(EnumType.STRING)
     private EventState state;
     private String title;
-    private Long views;
 }

@@ -47,9 +47,6 @@ public class RequestServiceImpl implements RequestService {
         if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new MyConflictException(String.format("Ошибка статуса: %s", event.getState()));
         }
-        if (event.getParticipantLimit().equals(event.getConfirmedRequests())) {
-            throw new MyConflictException(String.format("Превышен лимит участников для события с ID:%d", eventId));
-        }
 
         if (event.getParticipantLimit() != 0) {
             List<Request> requests = requestRepository.findAllByEventId(eventId);
@@ -120,11 +117,11 @@ public class RequestServiceImpl implements RequestService {
                     || request.getStatus().equals(RequestStatus.REJECTED)
                     || request.getStatus().equals(RequestStatus.PENDING)) {
                 eventRequestStatusUpdateResultConstructor(result, request);
-                requestRepository.save(request);
             } else {
                 throw new MyConflictException(String.format("Ошибка статуса: %s", request.getStatus()));
             }
         }
+        requestRepository.saveAll(requestListUpd);
         return result;
     }
 

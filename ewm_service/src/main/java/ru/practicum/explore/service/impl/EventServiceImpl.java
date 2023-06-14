@@ -4,8 +4,6 @@ import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ru.practicum.EndpointHitDto;
-import ru.practicum.StatsClient;
 import ru.practicum.explore.dto.*;
 import ru.practicum.explore.exception.MyConflictException;
 import ru.practicum.explore.exception.MyValidationException;
@@ -21,21 +19,24 @@ import ru.practicum.explore.repository.EventRepository;
 import ru.practicum.explore.repository.RequestRepository;
 import ru.practicum.explore.repository.UserRepository;
 import ru.practicum.explore.service.EventService;
+import ru.practicum.explore.service.StatsService;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
-    private final StatsClient statsClient = new StatsClient("http://stats-server:9090");
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final RequestRepository requestRepository;
+    private final StatsService statsService;
     private final EventMapper eventMapper;
     private final LocationMapper locationMapper;
 
@@ -57,10 +58,9 @@ public class EventServiceImpl implements EventService {
                 .eventDate(newEventDto.getEventDate())
                 .initiator(initiator)
                 .location(locationMapper.locationDtoToLocation(newEventDto.getLocation()))
-                .paid(newEventDto.getPaid() != null ? newEventDto.getPaid() : false)
-                .participantLimit(newEventDto.getParticipantLimit() != null ? newEventDto.getParticipantLimit() : 0)
-                .requestModeration(newEventDto.getRequestModeration() != null ?
-                        newEventDto.getRequestModeration() : true)
+                .paid(newEventDto.isPaid())
+                .participantLimit(newEventDto.getParticipantLimit())
+                .requestModeration(newEventDto.isRequestModeration())
                 .state(EventState.PENDING)
                 .title(newEventDto.getTitle())
                 .build();
@@ -129,18 +129,20 @@ public class EventServiceImpl implements EventService {
     public EventDto findByIdAndUser(Long userId, Long eventId) {
         Event event = findById(eventId);
         findUserById(userId);
-        setView(event);
-        return eventMapper.eventToEventDto(event);
+        EventDto eventDto = eventMapper.eventToEventDto(event);
+        statsService.setViewForEventDto(List.of(eventDto));
+        return eventDto;
     }
 
     @Override
     public List<EventShortDto> findAllForUser(Long userId, Pageable pageable) {
         findUserById(userId);
         List<Event> eventList = eventRepository.findAllByInitiatorId(userId, pageable);
-        eventList.forEach(this::setView);
-        return eventList.stream()
+        List<EventShortDto> eventShortDtoList = eventList.stream()
                 .map(eventMapper::eventToEventShortDto)
                 .collect(Collectors.toList());
+        statsService.setViewForEventShortDto(eventShortDtoList);
+        return eventShortDtoList;
     }
 
     @Override
@@ -222,12 +224,13 @@ public class EventServiceImpl implements EventService {
 
         List<Event> eventList = eventRepository
                 .findAll(Objects.requireNonNull(booleanBuilder.getValue()), pageable).getContent();
-        eventList.forEach(this::setView);
-        eventList.forEach(this::setConfirmedRequests);
-
-        return eventList.stream()
+        List<EventFullDto> eventFullDtoList = eventList.stream()
                 .map(eventMapper::eventToEventFullDto)
                 .collect(Collectors.toList());
+        statsService.setViewForEventFullDto(eventFullDtoList);
+        setConfirmedRequestsForEventFullDto(eventFullDtoList);
+
+        return eventFullDtoList;
     }
 
     @Override
@@ -237,10 +240,11 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException(String.format("События с ID:%d нет среди опубликованных", eventId));
         }
 
-        saveEndpointHit(request);
-        setView(event);
-        setConfirmedRequests(event);
-        return eventMapper.eventToEventDto(event);
+        statsService.saveEndpointHit(request);
+        EventDto eventDto = eventMapper.eventToEventDto(event);
+        statsService.setViewForEventDto(List.of(eventDto));
+        setConfirmedRequestsForEventDto(List.of(eventDto));
+        return eventDto;
     }
 
     @Override
@@ -255,7 +259,7 @@ public class EventServiceImpl implements EventService {
             }
         }
 
-        saveEndpointHit(request);
+        statsService.saveEndpointHit(request);
 
         BooleanBuilder booleanBuilder = new BooleanBuilder();
         QEvent qEvent = QEvent.event;
@@ -282,11 +286,12 @@ public class EventServiceImpl implements EventService {
 
         List<Event> eventList = eventRepository
                 .findAll(Objects.requireNonNull(booleanBuilder.getValue()), pageable).getContent();
-        eventList.forEach(this::setView);
-
-        return eventList.stream()
+        List<EventFullDto> eventFullDtoList = eventList.stream()
                 .map(eventMapper::eventToEventFullDto)
                 .collect(Collectors.toList());
+        statsService.setViewForEventFullDto(eventFullDtoList);
+
+        return eventFullDtoList;
     }
 
     private Event findById(Long eventId) {
@@ -304,26 +309,41 @@ public class EventServiceImpl implements EventService {
                 new NotFoundException(String.format("Категории с ID:%d нет в базе", categoryId)));
     }
 
-    private void saveEndpointHit(HttpServletRequest request) {
-        EndpointHitDto endpointHitDto = EndpointHitDto.builder()
-                .ip(request.getRemoteAddr())
-                .uri(request.getRequestURI())
-                .app("ewm-service")
-                .timestamp(LocalDateTime.now())
-                .build();
-        statsClient.postEndpointHit(endpointHitDto);
+    private void setConfirmedRequestsForEventFullDto(List<EventFullDto> eventFullDtoList) {
+        List<Long> eventIds = eventFullDtoList.stream().map(EventFullDto::getId).collect(Collectors.toList());
+        List<Request> requestList = requestRepository.findAllByEventIdInAndStatus(eventIds, RequestStatus.CONFIRMED);
+        Map<Long, Long> eventIdToConfirmedCount = new HashMap<>();
+
+        for (Request request : requestList) {
+            Long eventId = request.getEvent().getId();
+            if (!eventIdToConfirmedCount.containsKey(eventId)) {
+                eventIdToConfirmedCount.put(eventId, 1L);
+            } else {
+                eventIdToConfirmedCount.put(eventId, eventIdToConfirmedCount.get(eventId) + 1);
+            }
+        }
+
+        for (EventFullDto eventFullDto : eventFullDtoList) {
+            eventFullDto.setConfirmedRequests(eventIdToConfirmedCount.getOrDefault(eventFullDto.getId(), 0L));
+        }
     }
 
-    private void setView(Event event) {
-        int view = statsClient.getViewStats(event.getCreatedOn(),
-                LocalDateTime.now(),
-                List.of("/events/" + event.getId()), true).size();
-        event.setViews((long) view);
-    }
+    private void setConfirmedRequestsForEventDto(List<EventDto> eventDtoList) {
+        List<Long> eventIds = eventDtoList.stream().map(EventDto::getId).collect(Collectors.toList());
+        List<Request> requestList = requestRepository.findAllByEventIdInAndStatus(eventIds, RequestStatus.CONFIRMED);
+        Map<Long, Long> eventIdToConfirmedCount = new HashMap<>();
 
-    private void setConfirmedRequests(Event event) {
-        List<Request> requestList = requestRepository.findAllByEventIdAndStatus(event.getId(), RequestStatus.CONFIRMED);
+        for (Request request : requestList) {
+            Long eventId = request.getEvent().getId();
+            if (!eventIdToConfirmedCount.containsKey(eventId)) {
+                eventIdToConfirmedCount.put(eventId, 1L);
+            } else {
+                eventIdToConfirmedCount.put(eventId, eventIdToConfirmedCount.get(eventId) + 1);
+            }
+        }
 
-        event.setConfirmedRequests((long) requestList.size());
+        for (EventDto eventDto : eventDtoList) {
+            eventDto.setConfirmedRequests(eventIdToConfirmedCount.getOrDefault(eventDto.getId(), 0L));
+        }
     }
 }

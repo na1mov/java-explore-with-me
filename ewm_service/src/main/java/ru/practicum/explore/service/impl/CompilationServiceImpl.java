@@ -36,16 +36,13 @@ public class CompilationServiceImpl implements CompilationService {
             events = eventRepository.findAllByIdIn(newCompilationDto.getEvents());
         }
 
-        Set<EventShortDto> eventShortDtoList = new HashSet<>();
-        if (!events.isEmpty()) {
-            eventShortDtoList = events.stream()
-                    .map(eventMapper::eventToEventShortDto)
-                    .collect(Collectors.toSet());
-        }
+        Set<EventShortDto> eventShortDtoList = events.stream()
+                .map(eventMapper::eventToEventShortDto)
+                .collect(Collectors.toSet());
 
         Compilation compilation = Compilation.builder()
                 .events(events)
-                .pinned(newCompilationDto.getPinned() != null ? newCompilationDto.getPinned() : false)
+                .pinned(newCompilationDto.isPinned())
                 .title(newCompilationDto.getTitle())
                 .build();
         compilation = compilationRepository.save(compilation);

@@ -5,6 +5,7 @@ import lombok.*;
 import ru.practicum.explore.model.Location;
 import ru.practicum.explore.model.enums.StateAction;
 
+import javax.validation.constraints.PositiveOrZero;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
@@ -23,6 +24,7 @@ public class UpdateEventAdminRequest {
     private LocalDateTime eventDate;
     private Location location;
     private Boolean paid;
+    @PositiveOrZero
     private Long participantLimit;
     private Boolean requestModeration;
     private StateAction stateAction;

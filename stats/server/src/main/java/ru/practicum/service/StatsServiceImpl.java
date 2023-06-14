@@ -33,11 +33,11 @@ public class StatsServiceImpl implements StatsService {
     public List<ViewStatsDto> find(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
         log.info("Запрос на получение статистики");
 
-        if (start != null && end != null && start.isAfter(end)) {
+        if (start.isAfter(end)) {
             throw new MyDataException(String.format("Ошибка времени start:%s end:%s", start, end));
         }
         if (unique) {
-            if (uris == null || uris.isEmpty() || uris.get(0).equals("/events")) {
+            if (uris == null || uris.isEmpty()) {
                 return statsRepository.findUniqueViewStats(start, end).stream()
                         .map(viewStatsMapper::viewStatsToViewStatsDto)
                         .collect(Collectors.toList());
@@ -46,7 +46,7 @@ public class StatsServiceImpl implements StatsService {
                     .map(viewStatsMapper::viewStatsToViewStatsDto)
                     .collect(Collectors.toList());
         } else {
-            if (uris == null || uris.isEmpty() || uris.get(0).equals("/events")) {
+            if (uris == null || uris.isEmpty()) {
                 return statsRepository.findViewStats(start, end).stream()
                         .map(viewStatsMapper::viewStatsToViewStatsDto)
                         .collect(Collectors.toList());

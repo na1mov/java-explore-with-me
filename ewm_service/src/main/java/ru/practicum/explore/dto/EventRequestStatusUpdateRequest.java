@@ -4,6 +4,7 @@ import lombok.*;
 import ru.practicum.explore.model.enums.RequestStatus;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Getter
@@ -14,6 +15,6 @@ import java.util.List;
 public class EventRequestStatusUpdateRequest {
     @NotEmpty
     private List<Long> requestIds;
-    @NotEmpty
+    @NotNull
     private RequestStatus status;
 }

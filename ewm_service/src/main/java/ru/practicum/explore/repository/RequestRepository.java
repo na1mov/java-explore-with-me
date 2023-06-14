@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface RequestRepository extends JpaRepository<Request, Long> {
     List<Request> findAllByEventId(Long eventId);
 
-    List<Request> findAllByEventIdAndStatus(Long eventId, RequestStatus requestStatus);
+    List<Request> findAllByEventIdInAndStatus(List<Long> eventIds, RequestStatus requestStatus);
 
     List<Request> findAllByRequesterId(Long userId);
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import ru.practicum.explore.model.enums.StateAction;
 
+import javax.validation.constraints.PositiveOrZero;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
@@ -22,6 +23,7 @@ public class UpdateEventUserRequest {
     private LocalDateTime eventDate;
     private LocationDto location;
     private Boolean paid;
+    @PositiveOrZero
     private Long participantLimit;
     private Boolean requestModeration;
     private StateAction stateAction;
