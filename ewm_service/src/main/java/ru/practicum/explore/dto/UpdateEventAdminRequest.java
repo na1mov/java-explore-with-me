@@ -2,7 +2,6 @@ package ru.practicum.explore.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
-import ru.practicum.explore.model.Location;
 import ru.practicum.explore.model.enums.StateAction;
 
 import javax.validation.constraints.PositiveOrZero;
