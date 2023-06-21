@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.explore.dto.CommentDto;
 import ru.practicum.explore.dto.NewCommentDto;
-import ru.practicum.explore.exception.MyConflictException;
+import ru.practicum.explore.exception.MyForbiddenException;
 import ru.practicum.explore.exception.NotFoundException;
 import ru.practicum.explore.mapper.CommentMapper;
 import ru.practicum.explore.model.Comment;
@@ -49,7 +49,7 @@ public class CommentServiceImpl implements CommentService {
         checkUserById(userId);
         Comment commentForUpdate = findById(commentId);
         if (!Objects.equals(commentForUpdate.getAuthor().getId(), userId)) {
-            throw new MyConflictException("Ошибка доступа. Пользователь не является автором комментария");
+            throw new MyForbiddenException("Ошибка доступа. Пользователь не является автором комментария");
         }
 
         commentForUpdate.setText(newCommentDto.getText());
@@ -69,7 +69,7 @@ public class CommentServiceImpl implements CommentService {
         checkUserById(userId);
         Comment commentForDelete = findById(commentId);
         if (!Objects.equals(commentForDelete.getAuthor().getId(), userId)) {
-            throw new MyConflictException("Ошибка доступа. Пользователь не является автором комментария");
+            throw new MyForbiddenException("Ошибка доступа. Пользователь не является автором комментария");
         }
         commentRepository.deleteById(commentId);
     }
