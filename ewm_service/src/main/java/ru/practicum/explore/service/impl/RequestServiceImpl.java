@@ -132,7 +132,7 @@ public class RequestServiceImpl implements RequestService {
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId).orElseThrow(() ->
-                new NotFoundException(String.format("События с ID:%d нет в базе", userId)));
+                new NotFoundException(String.format("Пользователя с ID:%d нет в базе", userId)));
     }
 
     private void isParticipationLimitFull(Event event, List<Request> requests) {

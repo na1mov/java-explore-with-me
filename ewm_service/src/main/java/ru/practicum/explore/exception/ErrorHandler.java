@@ -41,6 +41,13 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiError handleMyForbiddenException(final MyForbiddenException e) {
+        log.debug("Получен статус FORBIDDEN {}", e.getMessage());
+        return apiErrorBuilder(e, "FORBIDDEN");
+    }
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleDataIntegrityException(final DataIntegrityViolationException e) {
         log.debug("Получен статус CONFLICT {}", e.getMessage());
